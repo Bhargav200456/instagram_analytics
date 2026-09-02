@@ -1,48 +1,148 @@
 # Instagram Analytics & Insight Generation
 
-An AI-powered web application that collects publicly available Instagram posts, groups related posts into meaningful clusters, and generates a combined AI insight for each cluster.
+An AI-powered web application designed to discover publicly available Instagram content based on a product or topic, process the collected data, and group related posts into meaningful clusters.
 
-The project is currently under development. The core data collection, clustering, AI insight generation, and dashboard integration are working, while additional features such as improved semantic clustering, analytics, history, and advanced filtering are planned.
+The current implementation focuses on the complete workflow up to **Instagram post collection, data processing, and machine-learning-based clustering**. Future enhancements will extend the system with AI-generated insights, semantic clustering, advanced analytics, authentication, database support, history, filtering, and other intelligent features.
 
 ---
 
 ## Project Overview
 
-The main goal of this project is to simplify the analysis of Instagram content.
+Social media platforms contain large amounts of content related to products, brands, events, people, and topics. Manually reviewing this content to identify common themes can be time-consuming.
 
-Instead of manually going through hundreds of Instagram posts, the system collects posts from a public Instagram profile and automatically identifies groups of related content.
+This project aims to automate that process.
 
-For example:
+A user can search for a product or topic such as:
 
-Instagram Posts:
+- Argentina Jersey
+- Messi Jersey
+- Nike Shoes
+- Football Boots
+- Travel
+- Wildlife
 
-- Messi Argentina Jersey
-- New Messi Jersey
-- Argentina Home Kit
-- Messi Football Shirt
-- Messi Jersey Collection
+The system discovers publicly available Instagram posts related to the search term, collects available post information, processes the data, and groups similar posts into clusters.
 
-The system can group these posts into:
+### Example
 
-    Messi Jersey
+User searches:
 
-The AI then analyzes all posts in that cluster and generates ONE combined insight.
+```text
+Argentina Jersey
+```
+
+The system may discover posts related to:
+
+```text
+Argentina National Team Jersey
+Messi Argentina Jersey
+Argentina Football Shirt
+Argentina Home Kit
+Football Jersey Collection
+```
+
+The collected posts are then processed and grouped into related content clusters.
 
 Example:
 
-    The cluster shows strong interest in Messi-associated
-    Argentina merchandise, with recurring emphasis on new
-    kit releases and player branding.
+```text
+Cluster 1 → Argentina National Team
+Cluster 2 → Messi Jersey
+Cluster 3 → Football Merchandise
+```
+
+The current project milestone ends at this clustering stage.
 
 ---
 
-## Main Features
+# Current Implementation
 
-### 1. Instagram Post Collection
+The project has currently been implemented up to the **content clustering stage**.
 
-The application uses Bright Data to collect publicly available Instagram post information from a selected profile.
+The completed workflow is:
 
-The collected information includes fields such as:
+```text
+User enters Product / Topic
+          ↓
+Keyword Search
+          ↓
+SERP API
+          ↓
+Instagram Post URLs
+          ↓
+Instagram Data Collection
+          ↓
+Data Cleaning
+          ↓
+Text Processing
+          ↓
+TF-IDF
+          ↓
+K-Means Clustering
+          ↓
+Related Instagram Post Clusters
+```
+
+The AI insight generation and advanced analytics stages are planned as future enhancements.
+
+---
+
+# Features Implemented
+
+## 1. Product / Topic Search
+
+The application accepts a product or topic keyword from the user.
+
+Examples:
+
+```text
+Argentina Jersey
+Messi Jersey
+Nike Shoes
+Football Boots
+```
+
+The keyword is used to discover relevant publicly indexed Instagram posts.
+
+---
+
+## 2. Instagram Post Discovery
+
+The system uses the Bright Data SERP API to search for Instagram posts related to the entered keyword.
+
+A search query is constructed around Instagram post URLs.
+
+Example:
+
+```text
+site:instagram.com/p/ "Argentina Jersey"
+```
+
+The search results are processed to extract Instagram post URLs.
+
+### Workflow
+
+```text
+Search Keyword
+      ↓
+Bright Data SERP API
+      ↓
+Google Search Results
+      ↓
+Instagram Results
+      ↓
+Instagram Post URLs
+```
+
+---
+
+## 3. Instagram Data Collection
+
+The discovered Instagram post URLs are passed to Bright Data's Instagram data collection service.
+
+The service is used to retrieve available information associated with the public Instagram posts.
+
+Depending on the returned data, available fields can include:
 
 - Post ID
 - Username
@@ -53,402 +153,486 @@ The collected information includes fields such as:
 - Image URL
 - Instagram post URL
 
----
-
-### 2. Automatic Post Clustering
-
-The collected posts are grouped into clusters based on their content.
-
-The current prototype uses:
-
-- TF-IDF
-- K-Means clustering
-
-This allows related posts to be grouped together automatically.
-
-Semantic embedding-based clustering is planned as a future improvement.
+The system is designed to handle cases where some fields are unavailable.
 
 ---
 
-### 3. Cluster-Level AI Insights
+## 4. Data Cleaning and Normalization
 
-OpenAI is used to analyze the complete group of posts belonging to a cluster.
+The collected data is cleaned before being passed to the machine learning pipeline.
 
-The system generates:
+The application converts different possible field names into a common internal structure.
 
-- One insight per cluster
-- A summary of the common theme
-- Common content patterns
-- Possible audience interests
-- Content strategy observations
+The normalized post structure contains fields such as:
 
-The AI does NOT generate a separate insight for every post.
+```text
+id
+username
+caption
+content_type
+date
+hashtags
+image_url
+post_url
+```
 
-Instead:
-
-    Multiple related posts
-            ↓
-        One Cluster
-            ↓
-          OpenAI
-            ↓
-      One Combined Insight
+This creates a consistent format for downstream processing.
 
 ---
 
-### 4. Interactive Dashboard
+## 5. Text Processing
 
-The React dashboard allows users to enter an Instagram username and start an analysis.
+Available textual information is used to represent each Instagram post.
 
-The dashboard displays:
+The primary sources of text are:
 
-- Instagram username
-- Number of posts analyzed
-- Number of clusters
-- Cluster names
-- Number of posts in each cluster
-- AI-generated insights
-- Posts belonging to each cluster
-- Post images and captions
+```text
+Caption
+Hashtags
+```
 
----
+Additional text fields can also be considered when available.
 
-## Current System Architecture
+Example:
 
-    User
-      |
-      v
-    React Frontend
-      |
-      v
-    Flask Backend
-      |
-      +-------------------+
-      |                   |
-      v                   v
-    Bright Data        OpenAI
-      |                   |
-      v                   |
-    Instagram Posts       |
-      |                   |
-      v                   |
-    Post Cleaning         |
-      |                   |
-      v                   |
-    Clustering -----------+
-      |
-      v
-    Cluster-Level Insights
-      |
-      v
-    React Dashboard
+```text
+Caption:
+New Messi Argentina jersey available now
+
+Hashtags:
+#Messi #Argentina #Jersey
+```
+
+The text is combined into a representation that can be processed by the clustering algorithm.
 
 ---
 
-## Technology Stack
+# 6. TF-IDF Based Feature Extraction
 
-### Frontend
+The current clustering implementation uses **TF-IDF (Term Frequency-Inverse Document Frequency)**.
+
+TF-IDF converts the textual content of Instagram posts into numerical vectors.
+
+The technique gives higher importance to words that are useful for distinguishing one post from another.
+
+### Processing Flow
+
+```text
+Instagram Post
+      ↓
+Caption + Hashtags
+      ↓
+Text Representation
+      ↓
+TF-IDF Vectorization
+      ↓
+Numerical Feature Vector
+```
+
+These vectors are then used as input to the clustering algorithm.
+
+---
+
+# 7. K-Means Clustering
+
+The current project uses **K-Means clustering** from Scikit-learn.
+
+K-Means groups posts with similar text representations into clusters.
+
+### Example
+
+Suppose the system receives:
+
+```text
+Post 1:
+Argentina football jersey Messi
+
+Post 2:
+Argentina national team jersey
+
+Post 3:
+Messi Argentina shirt collection
+
+Post 4:
+Nike running shoes for training
+
+Post 5:
+Best Nike shoes for athletes
+```
+
+The algorithm can identify groups such as:
+
+```text
+Cluster 1
+Argentina Football / Messi Jersey
+
+Cluster 2
+Nike Running Shoes
+```
+
+The number of requested clusters can be configured.
+
+---
+
+## Dynamic Cluster Handling
+
+The clustering service also handles cases where the requested number of clusters is not appropriate for the available data.
+
+For example, if five posts contain almost identical text representations, forcing three different clusters would not produce meaningful results.
+
+The system therefore checks the available data before applying K-Means and can reduce the effective number of clusters when necessary.
+
+This prevents unnecessary clustering warnings and avoids creating artificial groups from identical or insufficient data.
+
+---
+
+# Current System Architecture
+
+The current implemented architecture is:
+
+```text
+                         USER
+                           |
+                           v
+                   React Frontend
+                           |
+                           v
+                    Flask Backend
+                           |
+                           v
+                    Keyword Search
+                           |
+                           v
+                 Bright Data SERP API
+                           |
+                           v
+                Instagram Post URLs
+                           |
+                           v
+             Bright Data Data Collection
+                           |
+                           v
+                    Data Cleaning
+                           |
+                           v
+                  Text Processing
+                           |
+                           v
+                       TF-IDF
+                           |
+                           v
+                  K-Means Clustering
+                           |
+                           v
+               Related Post Clusters
+```
+
+---
+
+# Technology Stack
+
+## Frontend
 
 - React
 - JavaScript
 - React Router
 - Vite
-- Inline CSS
+- HTML
+- CSS
 
-### Backend
+## Backend
 
 - Python
 - Flask
 - Flask-CORS
 - REST API
 
-### Data Collection
+## Data Collection
 
-- Bright Data Instagram data collection API
+- Bright Data SERP API
+- Bright Data Instagram data collection
 
-### Machine Learning
+## Machine Learning
 
 - Scikit-learn
 - TF-IDF
-- K-Means clustering
+- K-Means
 
-### Artificial Intelligence
-
-- OpenAI API
-- OpenAI embeddings and language models are planned for improved semantic clustering and insights
-
-### Environment
+## Development Tools
 
 - Python Virtual Environment
 - Node.js
 - npm
 - Git
 - GitHub
+- Visual Studio Code
 
 ---
 
-## Project Structure
+# Project Structure
 
-    instagram-project/
-    |
-    ├── backend/
-    │   |
-    │   ├── routes/
-    │   │   ├── __init__.py
-    │   │   ├── instagram.py
-    │   │   ├── insights.py
-    │   │   └── auth.py
-    │   │
-    │   ├── services/
-    │   │   ├── __init__.py
-    │   │   ├── instagram_service.py
-    │   │   ├── clustering_service.py
-    │   │   └── insight_service.py
-    │   │
-    │   ├── .env
-    │   ├── .env.example
-    │   ├── app.py
-    │   └── requirements.txt
-    │
-    ├── public/
-    │
-    ├── src/
-    │   |
-    │   ├── components/
-    │   ├── hooks/
-    │   ├── layouts/
-    │   ├── pages/
-    │   ├── services/
-    │   └── ...
-    │
-    ├── .gitignore
-    ├── index.html
-    ├── package.json
-    ├── package-lock.json
-    ├── vite.config.js
-    └── README.md
+```text
+instagram-project/
+│
+├── backend/
+│   │
+│   ├── database/
+│   │   ├── __init__.py
+│   │   ├── db.py
+│   │   └── ...
+│   │
+│   ├── models/
+│   │   └── ...
+│   │
+│   ├── routes/
+│   │   ├── __init__.py
+│   │   ├── auth.py
+│   │   ├── insights.py
+│   │   └── instagram.py
+│   │
+│   ├── services/
+│   │   ├── __init__.py
+│   │   ├── clustering_service.py
+│   │   ├── insight_service.py
+│   │   ├── instagram_keyword_service.py
+│   │   ├── instagram_search.py
+│   │   ├── instagram_service.py
+│   │   └── keyword_pipeline.py
+│   │
+│   ├── .env
+│   ├── .env.example
+│   ├── app.py
+│   └── requirements.txt
+│
+├── public/
+│
+├── src/
+│   │
+│   ├── components/
+│   ├── hooks/
+│   ├── layouts/
+│   ├── pages/
+│   ├── services/
+│   ├── App.jsx
+│   ├── index.css
+│   └── main.jsx
+│
+├── .gitignore
+├── eslint.config.js
+├── index.html
+├── package.json
+├── package-lock.json
+├── vite.config.js
+└── README.md
+```
 
 ---
 
-## Backend API
+# Backend API
 
-### Health Check
+## Health Check
 
-    GET /health
+```text
+GET /health
+```
 
 Used to verify that the Flask backend is running.
 
 Example:
 
-    http://127.0.0.1:5000/health
+```text
+http://127.0.0.1:5000/health
+```
+
+Expected response:
+
+```json
+{
+    "status": "healthy"
+}
+```
 
 ---
 
-### Get Instagram Posts
+# Keyword Analysis Endpoint
 
-    GET /api/instagram/posts
+```text
+GET /api/insights/search
+```
 
-Parameters:
+### Parameters
 
-    username
+```text
+keyword
+clusters
+```
+
+### Example
+
+```text
+http://127.0.0.1:5000/api/insights/search?keyword=Argentina%20Jersey&clusters=3
+```
+
+The endpoint performs the implemented keyword analysis workflow:
+
+```text
+Keyword
+   ↓
+SERP API
+   ↓
+Instagram URLs
+   ↓
+Bright Data
+   ↓
+Post Collection
+   ↓
+Data Cleaning
+   ↓
+TF-IDF
+   ↓
+K-Means
+   ↓
+Clusters
+```
+
+---
+
+# Example Clustering Result
+
+A clustering response can contain information similar to:
+
+```json
+{
+    "success": true,
+    "keyword": "Argentina Jersey",
+    "total_posts": 5,
+    "total_clusters": 3,
+    "clusters": [
+        {
+            "cluster_id": 0,
+            "cluster_name": "Cluster 1",
+            "post_count": 2,
+            "posts": []
+        },
+        {
+            "cluster_id": 1,
+            "cluster_name": "Cluster 2",
+            "post_count": 2,
+            "posts": []
+        },
+        {
+            "cluster_id": 2,
+            "cluster_name": "Cluster 3",
+            "post_count": 1,
+            "posts": []
+        }
+    ]
+}
+```
+
+The exact number and composition of clusters depend on the available Instagram data and the selected number of clusters.
+
+---
+
+# How the Current System Works
+
+## Step 1: User Input
+
+The user enters a product or topic.
 
 Example:
 
-    http://127.0.0.1:5000/api/instagram/posts?username=natgeo
+```text
+Argentina Jersey
+```
 
-The endpoint collects publicly available Instagram posts through Bright Data and returns cleaned post information.
+## Step 2: Keyword Search
 
----
+The keyword is passed to the SERP API to discover relevant Instagram posts.
 
-### Generate Clusters
+```text
+Argentina Jersey
+        ↓
+SERP API
+        ↓
+Instagram Search Results
+```
 
-    GET /api/instagram/cluster
+## Step 3: URL Extraction
 
-Parameters:
+Relevant Instagram post URLs are extracted from the search results.
 
-    username
-    clusters
+```text
+Instagram Search Results
+        ↓
+Instagram Post URLs
+```
 
-Example:
+## Step 4: Instagram Data Collection
 
-    http://127.0.0.1:5000/api/instagram/cluster?username=natgeo&clusters=3
+The discovered URLs are submitted to the Instagram data collection service.
 
-This endpoint:
+```text
+Instagram Post URLs
+        ↓
+Bright Data
+        ↓
+Available Post Information
+```
 
-1. Collects Instagram posts
-2. Cleans the post data
-3. Creates text representations
-4. Applies clustering
-5. Returns the generated clusters
+## Step 5: Data Cleaning
 
----
+The returned information is normalized into a consistent structure.
 
-### Generate AI Insights
+```text
+Raw Data
+   ↓
+Cleaning
+   ↓
+Normalized Post Data
+```
 
-    GET /api/insights/generate
+## Step 6: Text Representation
 
-Parameters:
+Available captions and hashtags are combined to create text representations.
 
-    username
-    clusters
+```text
+Caption + Hashtags
+        ↓
+Post Text
+```
 
-Example:
+## Step 7: TF-IDF
 
-    http://127.0.0.1:5000/api/insights/generate?username=natgeo&clusters=3
+The text is converted into numerical feature vectors.
 
-This endpoint performs the complete analysis:
+```text
+Post Text
+    ↓
+TF-IDF
+    ↓
+Numerical Vectors
+```
 
-    Instagram Profile
-          ↓
-    Bright Data
-          ↓
-    Posts
-          ↓
-    Clustering
-          ↓
-    Cluster 1
-    Cluster 2
-    Cluster 3
-          ↓
-    OpenAI
-          ↓
-    One insight per cluster
+## Step 8: K-Means
 
----
+The numerical vectors are grouped using K-Means.
 
-## Example Output
-
-A successful analysis returns information similar to:
-
-    {
-        "success": true,
-        "username": "natgeo",
-        "total_posts": 12,
-        "total_clusters": 3,
-        "clusters": [
-            {
-                "cluster_id": 0,
-                "cluster_name": "Wildlife Content",
-                "post_count": 4,
-                "insight": "The cluster focuses on..."
-            },
-            {
-                "cluster_id": 1,
-                "cluster_name": "Space Exploration",
-                "post_count": 5,
-                "insight": "The cluster centers around..."
-            }
-        ]
-    }
+```text
+Numerical Vectors
+        ↓
+    K-Means
+        ↓
+Related Post Clusters
+```
 
 ---
 
-## How Clustering Works
+# Installation
 
-### Current Approach
+## Prerequisites
 
-The current prototype uses TF-IDF and K-Means.
-
-### Step 1: Collect Posts
-
-Instagram posts are collected using Bright Data.
-
-### Step 2: Combine Text
-
-The caption and hashtags of each post are combined.
-
-Example:
-
-    Caption:
-    New Messi Argentina jersey available now
-
-    Hashtags:
-    #Messi #Argentina #Jersey
-
-The combined text becomes the input for clustering.
-
-### Step 3: TF-IDF
-
-TF-IDF converts text into numerical vectors based on the importance of words within the collected posts.
-
-### Step 4: K-Means
-
-K-Means groups similar vectors into a specified number of clusters.
-
-Example:
-
-    Posts
-      |
-      +---- Cluster 1
-      |      Messi Jersey
-      |
-      +---- Cluster 2
-      |      Football Boots
-      |
-      +---- Cluster 3
-             Football News
-
----
-
-## How AI Insights Work
-
-The AI insight generation happens at the cluster level.
-
-For example:
-
-    Cluster: Messi Jersey
-
-    Post 1:
-    Messi Argentina jersey
-
-    Post 2:
-    New Argentina kit
-
-    Post 3:
-    Messi football shirt
-
-    Post 4:
-    Argentina home jersey
-
-All four posts are provided to the AI together.
-
-The AI generates:
-
-    One combined insight
-
-This prevents the system from generating repetitive insights for every individual post.
-
----
-
-## Frontend Workflow
-
-The current dashboard follows this workflow:
-
-    Login
-      ↓
-    Dashboard
-      ↓
-    Enter Instagram Username
-      ↓
-    Analyze Profile
-      ↓
-    Backend API
-      ↓
-    Bright Data
-      ↓
-    Clustering
-      ↓
-    OpenAI
-      ↓
-    Display Results
-
----
-
-## Installation
-
-### Prerequisites
-
-Make sure the following are installed:
+Install the following:
 
 - Python 3.13+
 - Node.js
@@ -457,130 +641,706 @@ Make sure the following are installed:
 
 ---
 
-## Backend Setup
+# Backend Setup
 
-Navigate to the backend:
+Navigate to the backend directory:
 
-    cd backend
+```powershell
+cd backend
+```
 
 Create a virtual environment:
 
-    py -3.13 -m venv venv
+```powershell
+py -3.13 -m venv venv
+```
 
-Activate the virtual environment on Windows:
+Activate the environment on Windows:
 
-    .\venv\Scripts\Activate.ps1
+```powershell
+.env\Scripts\Activate.ps1
+```
 
 Install dependencies:
 
-    pip install -r requirements.txt
+```powershell
+pip install -r requirements.txt
+```
 
 ---
 
-## Environment Variables
+# Environment Variables
 
-Create a file:
+Create:
 
-    backend/.env
+```text
+backend/.env
+```
 
-Add:
+Add the required credentials:
 
-    BRIGHTDATA_API_KEY=your_brightdata_api_key
-    OPENAI_API_KEY=your_openai_api_key
+```env
+BRIGHTDATA_API_KEY=your_brightdata_api_key
+BRIGHTDATA_SERP_ZONE=your_brightdata_serp_zone
+OPENAI_API_KEY=your_openai_api_key
+```
 
-Do NOT upload the real `.env` file to GitHub.
+The OpenAI key is included for the AI functionality planned in the next development stage.
 
-A safe example file is provided as:
+Do not commit the real `.env` file to GitHub.
 
-    backend/.env.example
+Use `.env.example` as the safe template:
 
-Example:
-
-    BRIGHTDATA_API_KEY=your_brightdata_api_key_here
-    OPENAI_API_KEY=your_openai_api_key_here
+```env
+BRIGHTDATA_API_KEY=your_brightdata_api_key_here
+BRIGHTDATA_SERP_ZONE=your_brightdata_serp_zone_here
+OPENAI_API_KEY=your_openai_api_key_here
+```
 
 ---
 
-## Run the Backend
+# Run the Backend
 
 From the backend directory:
 
-    python app.py
+```powershell
+python app.py
+```
 
-The backend will run on:
+The Flask backend runs at:
 
-    http://127.0.0.1:5000
+```text
+http://127.0.0.1:5000
+```
 
 ---
 
-## Frontend Setup
+# Frontend Setup
 
-Open another terminal and navigate to the project root.
+From the project root:
 
-Install dependencies:
-
-    npm install
+```powershell
+npm install
+```
 
 Start the React development server:
 
-    npm run dev
+```powershell
+npm run dev
+```
 
-Vite will provide the local frontend URL, usually:
+Vite will provide the frontend URL, usually:
 
-    http://localhost:5173
-
----
-
-## Running the Complete Application
-
-Two terminals are required.
-
-### Terminal 1 - Backend
-
-    cd backend
-    .\venv\Scripts\Activate.ps1
-    python app.py
-
-### Terminal 2 - Frontend
-
-    npm run dev
-
-Then open the frontend URL shown by Vite.
+```text
+http://localhost:5173
+```
 
 ---
 
-## Example Analysis
+# Running the Application
 
-For example, enter:
+## Terminal 1 - Backend
 
-    natgeo
+```powershell
+cd backend
+.env\Scripts\Activate.ps1
+python app.py
+```
 
-and click:
+## Terminal 2 - Frontend
 
-    Analyze Profile
+```powershell
+npm run dev
+```
 
-The application will:
-
-1. Send the username to the Flask backend.
-2. Request publicly available Instagram data from Bright Data.
-3. Retrieve the posts.
-4. Clean the post information.
-5. Group posts into clusters.
-6. Send each cluster to OpenAI.
-7. Generate one insight for each cluster.
-8. Display the results on the React dashboard.
+Open the URL displayed by Vite.
 
 ---
 
-## Security
+# Testing
 
-API keys are stored in environment variables.
+The project contains local development tests for validating individual components.
 
-The following files should NOT be committed to GitHub:
+Examples include:
 
-    .env
+```text
+backend/test_search.py
+backend/test_collect_posts.py
+backend/test_keyword_pipeline.py
+backend/test_clustering.py
+backend/test_clustering_openai.py
+backend/test_openai.py
+```
 
-The `.gitignore` file contains rules for environment files and other local development files.
+These files are ignored by Git using:
+
+```gitignore
+backend/test_*.py
+```
+
+Local clustering tests can be executed without using Bright Data credits.
+
+---
+
+# Current Project Status
+
+## Completed Milestone
+
+The project is currently completed up to the **machine-learning-based clustering stage**.
+
+### Completed
+
+- React project setup
+- Dashboard interface
+- Flask backend
+- REST API structure
+- Product/topic keyword search
+- Bright Data SERP API integration
+- Instagram post URL discovery
+- Bright Data Instagram data collection
+- Post data cleaning
+- Post normalization
+- Text processing
+- TF-IDF feature extraction
+- K-Means clustering
+- Dynamic cluster handling
+- Frontend-backend communication
+- Environment variable protection
+- GitHub repository setup
+
+### Current Working Pipeline
+
+```text
+Product / Topic
+      ↓
+Keyword Search
+      ↓
+SERP API
+      ↓
+Instagram Post URLs
+      ↓
+Bright Data
+      ↓
+Instagram Data
+      ↓
+Data Cleaning
+      ↓
+TF-IDF
+      ↓
+K-Means
+      ↓
+Content Clusters
+```
+
+The next stages will build AI-powered analysis and advanced analytics on top of these generated clusters.
+
+---
+
+# Future Enhancements
+
+## 1. AI-Generated Cluster Insights
+
+The next major enhancement is to pass each generated cluster to an OpenAI model.
+
+Instead of analyzing every post independently, the complete cluster will be analyzed together.
+
+```text
+Cluster
+   ↓
+All Posts in Cluster
+   ↓
+OpenAI
+   ↓
+One Combined Insight
+```
+
+The AI will generate:
+
+- Cluster summary
+- Common themes
+- Content patterns
+- Audience interests
+- Product/topic observations
+- Content strategy recommendations
+
+---
+
+## 2. Semantic Embedding-Based Clustering
+
+The current system uses TF-IDF, which mainly relies on word frequency.
+
+A future version will use semantic embeddings to understand the meaning of posts.
+
+Planned workflow:
+
+```text
+Caption + Hashtags
+        ↓
+Semantic Embeddings
+        ↓
+Similarity Calculation
+        ↓
+Semantic Clustering
+```
+
+This should improve grouping when posts are related in meaning but use different words.
+
+---
+
+## 3. Automatic Cluster Naming
+
+Future versions will generate meaningful names for clusters instead of generic cluster identifiers.
+
+Example:
+
+```text
+Cluster 1
+      ↓
+Argentina Football Jerseys
+
+Cluster 2
+      ↓
+Messi Merchandise
+
+Cluster 3
+      ↓
+Football Fan Content
+```
+
+---
+
+## 4. Advanced AI Analysis
+
+The AI layer can be expanded to provide:
+
+- Major themes
+- Audience interests
+- Product perception
+- Common messaging
+- Content patterns
+- Potential trends
+- Recommendations
+- Content opportunities
+
+Example:
+
+```text
+Topic:
+Argentina Jersey
+
+Summary:
+...
+
+Common Themes:
+...
+
+Audience Interest:
+...
+
+Observed Pattern:
+...
+
+Recommendation:
+...
+```
+
+---
+
+## 5. Dedicated Clusters Page
+
+A dedicated Clusters page can provide a complete view of all generated groups.
+
+Planned information includes:
+
+- Cluster name
+- Number of posts
+- AI-generated insight
+- Representative posts
+- Topic information
+- Cluster statistics
+
+---
+
+## 6. Cluster Details Page
+
+Users will be able to open an individual cluster and inspect all related posts.
+
+Possible information:
+
+- Cluster name
+- Cluster insight
+- All posts
+- Captions
+- Images
+- Hashtags
+- Dates
+- Original Instagram URLs
+
+---
+
+## 7. Advanced Analytics Dashboard
+
+The Analytics section can provide visual representations of the collected data.
+
+Possible analytics include:
+
+- Total posts analyzed
+- Cluster distribution
+- Content type distribution
+- Top topics
+- Posting frequency
+- Topic frequency
+- Cluster sizes
+- Topic trends
+
+---
+
+## 8. Engagement Analysis
+
+If engagement information becomes available from the collected data, the system can analyze:
+
+- Likes
+- Comments
+- Views
+- Average engagement
+- Engagement by cluster
+- Top-performing topics
+
+This can help identify which content themes perform better.
+
+---
+
+## 9. Sentiment Analysis
+
+A future NLP module can classify available post text as:
+
+```text
+Positive
+Neutral
+Negative
+```
+
+Sentiment can be analyzed at:
+
+- Post level
+- Cluster level
+- Topic level
+
+---
+
+## 10. Trend Detection
+
+The application can identify topics whose presence increases over time.
+
+Example:
+
+```text
+Week 1 → Messi Jersey → 5 posts
+Week 2 → Messi Jersey → 12 posts
+Week 3 → Messi Jersey → 25 posts
+```
+
+This can be used to identify growing topics and emerging trends.
+
+---
+
+## 11. Search and Filtering
+
+Future filtering options can include:
+
+- Keyword search
+- Cluster filter
+- Content type filter
+- Date filter
+- Topic filter
+- Relevance filter
+
+---
+
+## 12. Analysis History
+
+Previous searches and analyses can be stored for later comparison.
+
+Example:
+
+```text
+Argentina Jersey
+5 Posts
+3 Clusters
+September 2026
+
+Nike Shoes
+10 Posts
+3 Clusters
+September 2026
+```
+
+Users can revisit previous results without repeating the complete analysis process.
+
+---
+
+## 13. Database Integration
+
+A database can be introduced to store:
+
+- Users
+- Search keywords
+- Instagram posts
+- Clusters
+- AI insights
+- Analysis results
+- Analysis history
+
+SQLite can be used initially, with PostgreSQL as a possible production database.
+
+---
+
+## 14. User Authentication
+
+The application can be expanded with a complete authentication system.
+
+Possible functionality:
+
+- User registration
+- Login
+- Password authentication
+- JWT authentication
+- Protected routes
+- User-specific analysis history
+
+---
+
+## 15. Settings
+
+The Settings page can allow users to configure:
+
+- Number of posts to collect
+- Number of clusters
+- AI analysis options
+- Search preferences
+- Date ranges
+- Filtering preferences
+
+---
+
+## 16. Multi-Topic Comparison
+
+Future versions can compare multiple products or topics.
+
+Example:
+
+```text
+Argentina Jersey
+        VS
+Brazil Jersey
+        VS
+France Jersey
+```
+
+The system could compare:
+
+- Number of posts
+- Cluster distribution
+- Content patterns
+- Engagement
+- Sentiment
+- AI-generated observations
+
+---
+
+## 17. Multi-Profile Analysis
+
+Future versions can support analysis across multiple public Instagram profiles or sources.
+
+This can allow comparisons between different accounts and their content patterns.
+
+---
+
+## 18. Improved User Interface
+
+Future UI improvements can include:
+
+- Responsive design
+- Improved dashboard layout
+- Interactive charts
+- Better cluster cards
+- Search suggestions
+- Loading indicators
+- Improved empty states
+- Better error messages
+- Mobile support
+- Improved navigation
+
+---
+
+## 19. Performance and Backend Improvements
+
+Future backend improvements can include:
+
+- Asynchronous processing
+- Background jobs
+- Caching
+- API rate-limit handling
+- Request optimization
+- Better error recovery
+- Duplicate-result prevention
+- Result caching
+
+These improvements can make the system more efficient for larger workloads.
+
+---
+
+## 20. Production Deployment
+
+After the application is fully developed, it can be deployed using cloud infrastructure.
+
+Possible deployment architecture:
+
+```text
+User
+ ↓
+Cloud Frontend
+ ↓
+Cloud Backend API
+ ↓
+Data Collection Service
+ ↓
+Machine Learning Pipeline
+ ↓
+AI Service
+ ↓
+Database
+```
+
+Production improvements can include:
+
+- Secure environment variables
+- Cloud database
+- Logging
+- Monitoring
+- Error tracking
+- Production API configuration
+
+---
+
+# Future Architecture
+
+The planned final architecture is:
+
+```text
+                         USER
+                           |
+                           v
+                    React Frontend
+                           |
+                           v
+                    Flask REST API
+                           |
+                           v
+                    Keyword Search
+                           |
+                           v
+                 Bright Data SERP API
+                           |
+                           v
+                 Instagram Post URLs
+                           |
+                           v
+                Instagram Data Collection
+                           |
+                           v
+                    Data Cleaning
+                           |
+                           v
+               Semantic Embeddings
+                           |
+                           v
+                     Clustering
+                           |
+                           v
+                  Clustered Content
+                           |
+                           v
+                         OpenAI
+                           |
+                           v
+                AI Cluster Insights
+                           |
+                           v
+                    Analytics Layer
+                           |
+              +------------+------------+
+              |            |            |
+              v            v            v
+          Clusters     Analytics     History
+                           |
+                           v
+                       Database
+                           |
+                           v
+                  React Dashboard
+```
+
+---
+
+# Limitations
+
+The system works with publicly available Instagram data obtained through external data collection services.
+
+The application does not guarantee access to:
+
+- Every Instagram post
+- Private Instagram content
+- Every historical post
+- Every available post field
+
+The available data depends on:
+
+- Search engine indexing
+- Instagram availability
+- Profile visibility
+- External data collection capabilities
+- API limitations
+- Available post metadata
+- Network conditions
+
+Some posts may contain limited textual information, which can affect clustering quality.
+
+---
+
+# Responsible Use
+
+This project is intended for:
+
+- Educational purposes
+- Internship project demonstration
+- Social media content analysis
+- Research
+- Machine learning experimentation
+- AI experimentation
+
+Users should respect:
+
+- Instagram's applicable terms and policies
+- Bright Data's applicable terms and policies
+- Data privacy requirements
+- Applicable laws and regulations
+
+Only publicly accessible content should be considered for analysis.
+
+---
+
+# Security
+
+API credentials are stored in environment variables.
+
+The following file should never be committed:
+
+```text
+.env
+```
+
+The `.gitignore` file protects environment variables, virtual environments, test files, and other local development files.
 
 API keys should never be placed directly inside:
 
@@ -589,460 +1349,130 @@ API keys should never be placed directly inside:
 - README files
 - GitHub repositories
 - Screenshots
+- Public documentation
+
+If an API key is exposed, it should be revoked and replaced immediately.
 
 ---
 
-## Current Project Status
-
-The project is currently in the development/prototype stage.
-
-### Completed
-
-- React frontend
-- Dashboard
-- Navigation
-- Flask backend
-- Bright Data integration
-- Instagram post collection
-- Post cleaning
-- TF-IDF based text processing
-- K-Means clustering
-- OpenAI integration
-- Cluster-level AI insight generation
-- Frontend and backend integration
-- GitHub repository setup
-- Environment variable protection
-
-### Currently Working
-
-The complete workflow is functional:
-
-    Instagram Profile
-          ↓
-    Bright Data
-          ↓
-    Instagram Posts
-          ↓
-    Clustering
-          ↓
-    AI Insight
-          ↓
-    Dashboard
-
----
-
-# Development Roadmap
-
-The following features are planned for the next stages of development.
-
-## Phase 1 - Improve Semantic Clustering
-
-Replace or improve the current TF-IDF approach with semantic embeddings.
-
-Current:
-
-    Caption
-      ↓
-    TF-IDF
-      ↓
-    K-Means
-
-Planned:
-
-    Caption + Hashtags
-          ↓
-    Semantic Embeddings
-          ↓
-    Similarity
-          ↓
-    Clustering
-
-This should improve the ability to group posts based on meaning rather than only shared words.
-
----
-
-## Phase 2 - Improve Cluster Naming
-
-The current cluster names are generated from the cluster content.
-
-The planned system will generate clearer topic names such as:
-
-    Messi Jersey
-    Football Merchandise
-    Wildlife Conservation
-    Space Exploration
-    Travel Content
-
----
-
-## Phase 3 - Advanced AI Insights
-
-The insight system will be expanded to provide:
-
-- Cluster summary
-- Common themes
-- Audience interest
-- Content patterns
-- Content recommendations
-- Potential trends
-
-Example:
-
-    Topic:
-    Messi Jersey
-
-    Posts Analyzed:
-    18
-
-    Summary:
-    ...
-
-    Common Themes:
-    ...
-
-    Audience Interest:
-    ...
-
-    Recommendation:
-    ...
-
----
-
-## Phase 4 - Dedicated Clusters Page
-
-Create a dedicated page for viewing all generated clusters.
-
-The page will show:
-
-- Cluster name
-- Number of posts
-- AI insight
-- Post previews
-- Cluster details
-
----
-
-## Phase 5 - Cluster Details
-
-Users will be able to open a cluster and view:
-
-- Complete cluster insight
-- All posts in the cluster
-- Images
-- Captions
-- Dates
-- Original Instagram links
-
----
-
-## Phase 6 - Profile Page
-
-The profile page will display:
-
-- Instagram username
-- Account information
-- Posts analyzed
-- Last analysis
-- Connection status
-- Re-analysis option
-
----
-
-## Phase 7 - Authentication
-
-The current login interface will be improved into a proper authentication system.
-
-Possible future implementation:
-
-- User accounts
-- Password authentication
-- JWT authentication
-- Protected dashboard routes
-
----
-
-## Phase 8 - Settings
-
-The settings page can allow users to configure:
-
-- Number of clusters
-- Number of posts to analyze
-- AI insight settings
-- Analysis preferences
-
----
-
-## Phase 9 - Analysis History
-
-Store previous analyses so users can compare results.
-
-Example:
-
-    @natgeo
-    12 Posts
-    3 Clusters
-    September 2026
-
-    @nike
-    30 Posts
-    5 Clusters
-    September 2026
-
-Users will be able to open previous analyses without running the scraper again.
-
----
-
-## Phase 10 - Database
-
-A database will be introduced to persist:
-
-- Users
-- Instagram profiles
-- Posts
-- Clusters
-- AI insights
-- Analysis history
-
-SQLite can be used initially, with PostgreSQL as a possible future production database.
-
----
-
-## Phase 11 - Analytics
-
-Analytics will be added after the core clustering and insight workflow is stable.
-
-Possible analytics include:
-
-- Total posts
-- Cluster distribution
-- Content type distribution
-- Posting frequency
-- Top topics
-- Engagement analysis
-- Cluster growth
-- Content trends
-
-Charts and visualizations will be added to the Analytics page.
-
----
-
-## Phase 12 - Engagement Analysis
-
-If engagement information is available from the collected data, the system can analyze:
-
-- Likes
-- Comments
-- Views
-- Average engagement
-- Engagement by cluster
-
-Example:
-
-    Wildlife
-    35% of posts
-    52% of engagement
-
-This can help identify which content topics perform better.
-
----
-
-## Phase 13 - Search and Filtering
-
-Future filtering options:
-
-- Search by keyword
-- Filter by cluster
-- Filter by content type
-- Filter by date
-- Search specific topics
-
----
-
-## Phase 14 - UI Improvements
-
-The final UI will include:
-
-- Responsive design
-- Better cards
-- Improved navigation
-- Loading states
-- Error handling
-- Empty states
-- Improved typography
-- Better spacing
-- Interactive components
-
----
-
-## Future Architecture
-
-The planned final architecture is:
-
-    User
-      |
-      v
-    React Frontend
-      |
-      v
-    Flask REST API
-      |
-      +-------------------+
-      |                   |
-      v                   v
-    Bright Data        Database
-      |                   |
-      v                   |
-    Instagram Posts       |
-      |                   |
-      v                   |
-    Data Cleaning         |
-      |                   |
-      v                   |
-    Semantic Embeddings   |
-      |                   |
-      v                   |
-    Clustering -----------+
-      |
-      v
-    Clustered Posts
-      |
-      v
-    OpenAI
-      |
-      v
-    Cluster-Level Insights
-      |
-      v
-    React Dashboard
-      |
-      +---- Clusters
-      |
-      +---- Profile
-      |
-      +---- History
-      |
-      +---- Analytics
-      |
-      +---- Settings
-
----
-
-## Limitations
-
-This project works with publicly available Instagram data through the selected Bright Data data collection service.
-
-The application should not be described as guaranteeing access to every historical Instagram post from every profile.
-
-The available data depends on:
-
-- Profile visibility
-- Instagram availability
-- Bright Data scraper capabilities
-- Available post fields
-- API limitations
-
-The project is intended to analyze publicly accessible content.
-
----
-
-## Responsible Use
-
-This project is intended for:
-
-- Educational purposes
-- Internship/project demonstration
-- Social media content analysis
-- Research and experimentation
-
-Users should respect Instagram's terms, applicable laws, and the terms of the data collection service being used.
-
----
-
-## Future Improvements
-
-Possible future improvements include:
-
-- Better semantic clustering
-- Automated topic detection
-- Sentiment analysis
-- Trend detection
-- Engagement prediction
-- Advanced recommendation generation
-- Historical comparison
-- Real-time analysis
-- Multi-profile comparison
-- More detailed analytics
-- Improved visualization
-- Production database
-- User authentication
-
----
-
-## Project Goal
-
-The long-term goal is to create a platform that turns large amounts of Instagram content into understandable, actionable insights.
-
-Instead of manually reviewing hundreds of posts:
-
-    Hundreds of Instagram Posts
-              ↓
-        Automatic Analysis
-              ↓
-        Related Content
-              ↓
-           Clusters
-              ↓
-        AI Analysis
-              ↓
-       Actionable Insights
-
-This allows users to understand the major topics, content patterns, and audience interests present in an Instagram profile.
-
----
-
-## Development Status
-
-Status: In Development
-
-Current milestone:
-
-    Data Collection
+# Project Roadmap
+
+```text
+Phase 1
+Keyword Search
         ✓
 
-    Post Processing
+Phase 2
+Instagram URL Discovery
         ✓
 
-    Basic Clustering
+Phase 3
+Instagram Data Collection
         ✓
 
-    Cluster-Level AI Insights
+Phase 4
+Data Cleaning
         ✓
 
-    React Dashboard Integration
+Phase 5
+TF-IDF Processing
         ✓
 
-    Semantic Clustering
+Phase 6
+K-Means Clustering
+        ✓
+
+Phase 7
+AI Cluster Insights
         Planned
 
-    Advanced Analytics
+Phase 8
+Semantic Clustering
         Planned
 
-    Analysis History
+Phase 9
+Automatic Cluster Naming
         Planned
 
-    Database
+Phase 10
+Advanced Analytics
         Planned
+
+Phase 11
+Sentiment & Trend Analysis
+        Planned
+
+Phase 12
+Analysis History
+        Planned
+
+Phase 13
+Database Integration
+        Planned
+
+Phase 14
+Authentication
+        Planned
+
+Phase 15
+Advanced Filtering
+        Planned
+
+Phase 16
+Multi-Topic / Multi-Profile Comparison
+        Planned
+
+Phase 17
+Production Deployment
+        Planned
+```
 
 ---
 
-## Author
+# Project Goal
 
-Bhargav
+The long-term goal is to build an intelligent Instagram content analytics platform that transforms large amounts of publicly available social media content into structured information and actionable insights.
 
-This project is being developed as part of an internship project focused on Python development, AI, data processing, and web application development.
+The intended evolution is:
+
+```text
+Large Amount of Instagram Content
+              ↓
+          Data Collection
+              ↓
+          Data Processing
+              ↓
+        Content Clustering
+              ↓
+       Semantic Understanding
+              ↓
+         AI Analysis
+              ↓
+       Advanced Analytics
+              ↓
+      Actionable Insights
+```
+
+The current implementation establishes the foundation by completing the data collection, processing, and clustering pipeline. Future enhancements will build an intelligent analysis layer on top of these clusters.
 
 ---
 
-## License
+# Author
 
-This project is currently intended for educational and internship purposes.
+**Bhargav**
+
+This project is developed as an internship project focused on:
+
+- Python development
+- React development
+- REST API development
+- Data collection
+- Natural Language Processing
+- Machine Learning
+- AI-powered analytics
+
+---
+
+# License
+
+This project is intended primarily for educational, internship, and demonstration purposes.
