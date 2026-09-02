@@ -4,14 +4,14 @@ import { useState } from "react";
 function Dashboard() {
   const navigate = useNavigate();
 
-  const [username, setUsername] = useState("natgeo");
+  const [keyword, setKeyword] = useState("Argentina Jersey");
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const analyzeProfile = async () => {
-    if (!username.trim()) {
-      setError("Please enter an Instagram username.");
+  const analyzeKeyword = async () => {
+    if (!keyword.trim()) {
+      setError("Please enter a product or topic.");
       return;
     }
 
@@ -21,15 +21,17 @@ function Dashboard() {
 
     try {
       const response = await fetch(
-        `http://127.0.0.1:5000/api/insights/generate?username=${encodeURIComponent(
-          username.trim()
+        `http://127.0.0.1:5000/api/insights/search?keyword=${encodeURIComponent(
+          keyword.trim()
         )}&clusters=3`
       );
 
       const result = await response.json();
 
       if (!response.ok || !result.success) {
-        throw new Error(result.message || "Failed to analyze profile.");
+        throw new Error(
+          result.message || "Failed to analyze keyword."
+        );
       }
 
       setData(result);
@@ -63,7 +65,9 @@ function Dashboard() {
           flexShrink: 0,
         }}
       >
-        <h2 style={{ marginBottom: "40px" }}>Insight Generation</h2>
+        <h2 style={{ marginBottom: "40px" }}>
+          Insight Generation
+        </h2>
 
         <div
           style={{
@@ -137,7 +141,7 @@ function Dashboard() {
       {/* ================= MAIN CONTENT ================= */}
 
       <div style={{ flex: 1 }}>
-        {/* Navbar */}
+        {/* ================= NAVBAR ================= */}
 
         <div
           style={{
@@ -149,7 +153,9 @@ function Dashboard() {
             boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
           }}
         >
-          <h2 style={{ margin: 0 }}>Dashboard</h2>
+          <h2 style={{ margin: 0 }}>
+            Dashboard
+          </h2>
 
           <div
             style={{
@@ -158,7 +164,12 @@ function Dashboard() {
               gap: "20px",
             }}
           >
-            <span style={{ fontSize: "15px", color: "#666" }}>
+            <span
+              style={{
+                fontSize: "15px",
+                color: "#666",
+              }}
+            >
               Instagram Insights
             </span>
 
@@ -183,7 +194,9 @@ function Dashboard() {
         {/* ================= DASHBOARD BODY ================= */}
 
         <div style={{ padding: "40px" }}>
-          <h1 style={{ marginBottom: "8px" }}>Welcome Back</h1>
+          <h1 style={{ marginBottom: "8px" }}>
+            Welcome Back
+          </h1>
 
           <p
             style={{
@@ -191,11 +204,11 @@ function Dashboard() {
               marginBottom: "30px",
             }}
           >
-            Analyze Instagram content, discover clusters and generate AI
-            insights.
+            Search Instagram topics and products, discover
+            content clusters and generate AI-powered insights.
           </p>
 
-          {/* ================= ANALYZE SECTION ================= */}
+          {/* ================= KEYWORD SEARCH ================= */}
 
           <div
             style={{
@@ -206,11 +219,13 @@ function Dashboard() {
               marginBottom: "30px",
             }}
           >
-            <h2 style={{ marginTop: 0 }}>Analyze Instagram Profile</h2>
+            <h2 style={{ marginTop: 0 }}>
+              Analyze Product / Topic
+            </h2>
 
             <p style={{ color: "#666" }}>
-              Enter a public Instagram username to collect and analyze its
-              posts.
+              Enter a product or topic to discover relevant
+              public Instagram posts and generate AI insights.
             </p>
 
             <div
@@ -218,14 +233,21 @@ function Dashboard() {
                 display: "flex",
                 gap: "12px",
                 marginTop: "20px",
-                maxWidth: "700px",
+                maxWidth: "750px",
               }}
             >
               <input
                 type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                placeholder="Enter Instagram username"
+                value={keyword}
+                onChange={(e) =>
+                  setKeyword(e.target.value)
+                }
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    analyzeKeyword();
+                  }
+                }}
+                placeholder="e.g. Argentina Jersey, Nike Shoes, Messi Jersey"
                 style={{
                   flex: 1,
                   padding: "14px",
@@ -237,20 +259,26 @@ function Dashboard() {
               />
 
               <button
-                onClick={analyzeProfile}
+                onClick={analyzeKeyword}
                 disabled={loading}
                 style={{
                   padding: "14px 24px",
                   border: "none",
                   borderRadius: "8px",
-                  background: loading ? "#94a3b8" : "#2563eb",
+                  background: loading
+                    ? "#94a3b8"
+                    : "#2563eb",
                   color: "white",
-                  cursor: loading ? "not-allowed" : "pointer",
+                  cursor: loading
+                    ? "not-allowed"
+                    : "pointer",
                   fontSize: "16px",
                   fontWeight: "bold",
                 }}
               >
-                {loading ? "Analyzing..." : "Analyze Profile"}
+                {loading
+                  ? "Analyzing..."
+                  : "Analyze"}
               </button>
             </div>
 
@@ -261,8 +289,9 @@ function Dashboard() {
                   color: "#2563eb",
                 }}
               >
-                Collecting posts, creating clusters and generating AI
-                insights. This may take a little while...
+                Searching Instagram, collecting posts,
+                creating clusters and generating AI insights.
+                This may take a little while...
               </p>
             )}
 
@@ -301,8 +330,8 @@ function Dashboard() {
                 data ? data.total_clusters : "--",
               ],
               [
-                "Profile",
-                data ? `@${data.username}` : "--",
+                "Search Topic",
+                data ? data.keyword : "--",
               ],
             ].map(([title, value]) => (
               <div
@@ -311,7 +340,8 @@ function Dashboard() {
                   background: "white",
                   padding: "25px",
                   borderRadius: "12px",
-                  boxShadow: "0 3px 10px rgba(0,0,0,0.08)",
+                  boxShadow:
+                    "0 3px 10px rgba(0,0,0,0.08)",
                 }}
               >
                 <p
@@ -324,15 +354,16 @@ function Dashboard() {
                   {title}
                 </p>
 
-                <h1
+                <h2
                   style={{
                     marginTop: "10px",
                     marginBottom: 0,
                     color: "#1e293b",
+                    wordBreak: "break-word",
                   }}
                 >
                   {value}
-                </h1>
+                </h2>
               </div>
             ))}
           </div>
@@ -348,7 +379,8 @@ function Dashboard() {
               <div
                 style={{
                   display: "grid",
-                  gridTemplateColumns: "repeat(2, 1fr)",
+                  gridTemplateColumns:
+                    "repeat(2, 1fr)",
                   gap: "25px",
                 }}
               >
@@ -359,7 +391,8 @@ function Dashboard() {
                       background: "white",
                       borderRadius: "12px",
                       padding: "25px",
-                      boxShadow: "0 3px 10px rgba(0,0,0,0.08)",
+                      boxShadow:
+                        "0 3px 10px rgba(0,0,0,0.08)",
                     }}
                   >
                     {/* Cluster heading */}
@@ -367,9 +400,11 @@ function Dashboard() {
                     <div
                       style={{
                         display: "flex",
-                        justifyContent: "space-between",
+                        justifyContent:
+                          "space-between",
                         alignItems: "center",
                         marginBottom: "15px",
+                        gap: "10px",
                       }}
                     >
                       <h2
@@ -389,6 +424,7 @@ function Dashboard() {
                           borderRadius: "20px",
                           fontSize: "13px",
                           fontWeight: "bold",
+                          whiteSpace: "nowrap",
                         }}
                       >
                         {cluster.post_count} posts
@@ -400,7 +436,8 @@ function Dashboard() {
                     <div
                       style={{
                         background: "#f8fafc",
-                        borderLeft: "4px solid #2563eb",
+                        borderLeft:
+                          "4px solid #2563eb",
                         padding: "15px",
                         borderRadius: "6px",
                         marginBottom: "20px",
@@ -428,65 +465,123 @@ function Dashboard() {
 
                     {/* Posts */}
 
-                    <h4>Posts in this cluster</h4>
+                    <h4>
+                      Posts in this cluster
+                    </h4>
 
                     <div
                       style={{
                         display: "flex",
-                        flexDirection: "column",
+                        flexDirection:
+                          "column",
                         gap: "15px",
                       }}
                     >
-                      {cluster.posts.map((post) => (
-                        <div
-                          key={post.id}
-                          style={{
-                            display: "flex",
-                            gap: "15px",
-                            borderTop: "1px solid #e5e7eb",
-                            paddingTop: "15px",
-                          }}
-                        >
-                          {post.image_url && (
-                            <img
-                              src={post.image_url}
-                              alt="Instagram post"
+                      {cluster.posts &&
+                        cluster.posts.map(
+                          (post, index) => (
+                            <div
+                              key={
+                                post.id ||
+                                post.post_url ||
+                                index
+                              }
                               style={{
-                                width: "80px",
-                                height: "80px",
-                                objectFit: "cover",
-                                borderRadius: "8px",
-                              }}
-                            />
-                          )}
-
-                          <div style={{ flex: 1 }}>
-                            <p
-                              style={{
-                                margin: "0 0 6px 0",
-                                color: "#374151",
-                                fontSize: "14px",
-                                lineHeight: "1.4",
+                                display: "flex",
+                                gap: "15px",
+                                borderTop:
+                                  "1px solid #e5e7eb",
+                                paddingTop: "15px",
                               }}
                             >
-                              {post.caption
-                                ? post.caption.length > 150
-                                  ? post.caption.substring(0, 150) + "..."
-                                  : post.caption
-                                : "No caption available"}
-                            </p>
+                              {post.image_url && (
+                                <img
+                                  src={
+                                    post.image_url
+                                  }
+                                  alt="Instagram post"
+                                  style={{
+                                    width: "80px",
+                                    height: "80px",
+                                    objectFit:
+                                      "cover",
+                                    borderRadius:
+                                      "8px",
+                                  }}
+                                />
+                              )}
 
-                            <span
-                              style={{
-                                fontSize: "12px",
-                                color: "#888",
-                              }}
-                            >
-                              {post.content_type || "Post"}
-                            </span>
-                          </div>
-                        </div>
-                      ))}
+                              <div
+                                style={{
+                                  flex: 1,
+                                }}
+                              >
+                                <p
+                                  style={{
+                                    margin:
+                                      "0 0 6px 0",
+                                    color:
+                                      "#374151",
+                                    fontSize:
+                                      "14px",
+                                    lineHeight:
+                                      "1.4",
+                                  }}
+                                >
+                                  {post.caption
+                                    ? post.caption
+                                        .length >
+                                      150
+                                      ? post.caption.substring(
+                                          0,
+                                          150
+                                        ) + "..."
+                                      : post.caption
+                                    : "No caption available"}
+                                </p>
+
+                                <span
+                                  style={{
+                                    fontSize:
+                                      "12px",
+                                    color:
+                                      "#888",
+                                  }}
+                                >
+                                  {post.content_type ||
+                                    "Post"}
+                                </span>
+
+                                {post.post_url && (
+                                  <div
+                                    style={{
+                                      marginTop:
+                                        "8px",
+                                    }}
+                                  >
+                                    <a
+                                      href={
+                                        post.post_url
+                                      }
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      style={{
+                                        fontSize:
+                                          "12px",
+                                        color:
+                                          "#2563eb",
+                                        textDecoration:
+                                          "none",
+                                      }}
+                                    >
+                                      View Instagram Post
+                                    </a>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          )
+                        )}
                     </div>
                   </div>
                 ))}
@@ -496,25 +591,31 @@ function Dashboard() {
 
           {/* ================= INITIAL STATE ================= */}
 
-          {!data && !loading && !error && (
-            <div
-              style={{
-                background: "white",
-                padding: "50px",
-                borderRadius: "12px",
-                textAlign: "center",
-                boxShadow: "0 3px 10px rgba(0,0,0,0.08)",
-              }}
-            >
-              <h2>Start Your Analysis</h2>
+          {!data &&
+            !loading &&
+            !error && (
+              <div
+                style={{
+                  background: "white",
+                  padding: "50px",
+                  borderRadius: "12px",
+                  textAlign: "center",
+                  boxShadow:
+                    "0 3px 10px rgba(0,0,0,0.08)",
+                }}
+              >
+                <h2>
+                  Start Your Analysis
+                </h2>
 
-              <p style={{ color: "#666" }}>
-                Enter an Instagram username above and click{" "}
-                <strong>Analyze Profile</strong> to generate clusters and
-                AI-powered insights.
-              </p>
-            </div>
-          )}
+                <p style={{ color: "#666" }}>
+                  Enter a product or topic above and
+                  click <strong>Analyze</strong> to
+                  discover Instagram content clusters
+                  and generate AI-powered insights.
+                </p>
+              </div>
+            )}
         </div>
       </div>
     </div>

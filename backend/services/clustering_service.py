@@ -1,231 +1,179 @@
 import re
 
-from openai import OpenAI
-from dotenv import load_dotenv
-import os
-
+from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.cluster import KMeans
 
 
-load_dotenv()
-
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-
-client = OpenAI(api_key=OPENAI_API_KEY)
-
-
-def clean_text(text):
+def _build_post_text(post):
     """
-    Clean caption or hashtag text.
+    Build searchable text from all useful fields available
+    in an Instagram post.
     """
 
-    if not text:
-        return ""
+    parts = []
 
-    text = text.lower()
+    caption = post.get("caption")
+    if caption:
+        parts.append(str(caption))
 
-    # Remove URLs
-    text = re.sub(r"http\S+|www\S+", "", text)
+    hashtags = post.get("hashtags")
+    if hashtags:
+        if isinstance(hashtags, list):
+            parts.extend(str(tag) for tag in hashtags)
+        else:
+            parts.append(str(hashtags))
 
-    # Remove mentions
-    text = re.sub(r"@\w+", "", text)
+    # Support alternative fields that may be returned
+    # by different Instagram data providers.
+    for field in [
+        "description",
+        "text",
+        "title",
+        "alt_text"
+    ]:
+        value = post.get(field)
 
-    # Remove hashtag symbol
-    text = text.replace("#", " ")
+        if value:
+            parts.append(str(value))
 
-    # Remove special characters
-    text = re.sub(r"[^a-zA-Z0-9\s]", " ", text)
+    text = " ".join(parts)
 
-    # Remove extra spaces
+    # Basic cleanup
     text = re.sub(r"\s+", " ", text).strip()
 
     return text
 
 
-def create_embedding(text):
-    """
-    Convert text into a semantic embedding using OpenAI.
-    """
-
-    response = client.embeddings.create(
-        model="text-embedding-3-small",
-        input=text
-    )
-
-    return response.data[0].embedding
-
-
 def cluster_posts(posts, number_of_clusters=3):
     """
-    Group Instagram posts based on semantic meaning.
+    Cluster Instagram posts using TF-IDF + K-Means.
+
+    The number of clusters is automatically reduced when
+    there are not enough unique text representations.
     """
 
     if not posts:
         return []
 
-    # ------------------------------------------------
-    # Create text for every post
-    # ------------------------------------------------
+    # --------------------------------
+    # Build text for every post
+    # --------------------------------
 
     documents = []
 
     for post in posts:
-
-        caption = post.get("caption", "")
-
-        hashtags = post.get("hashtags", [])
-
-        if isinstance(hashtags, list):
-            hashtags_text = " ".join(hashtags)
-        else:
-            hashtags_text = str(hashtags)
-
-        combined_text = f"{caption} {hashtags_text}"
-
         documents.append(
-            clean_text(combined_text)
+            _build_post_text(post)
         )
 
-    # ------------------------------------------------
-    # Handle one post
-    # ------------------------------------------------
+    # --------------------------------
+    # Check whether useful text exists
+    # --------------------------------
 
-    if len(posts) == 1:
+    non_empty_documents = [
+        text for text in documents
+        if text
+    ]
+
+    # If there is no textual information,
+    # return one cluster instead of forcing K-Means.
+    if not non_empty_documents:
 
         return [{
             "cluster_id": 0,
-            "cluster_name": "General",
-            "post_count": 1,
+            "cluster_name": "Instagram Posts",
+            "post_count": len(posts),
             "posts": posts
         }]
 
-    # ------------------------------------------------
-    # Create semantic embeddings
-    # ------------------------------------------------
+    # --------------------------------
+    # TF-IDF
+    # --------------------------------
 
-    embeddings = []
-
-    for document in documents:
-
-        if not document:
-            document = "Instagram post"
-
-        embedding = create_embedding(document)
-
-        embeddings.append(embedding)
-
-    # ------------------------------------------------
-    # Make sure cluster count is valid
-    # ------------------------------------------------
-
-    number_of_clusters = min(
-        number_of_clusters,
-        len(posts)
+    vectorizer = TfidfVectorizer(
+        stop_words="english",
+        max_features=1000
     )
 
-    # ------------------------------------------------
-    # K-Means clustering
-    # ------------------------------------------------
+    try:
+        X = vectorizer.fit_transform(documents)
+    except ValueError:
+
+        return [{
+            "cluster_id": 0,
+            "cluster_name": "Instagram Posts",
+            "post_count": len(posts),
+            "posts": posts
+        }]
+
+    # --------------------------------
+    # Determine valid cluster count
+    # --------------------------------
+
+    unique_vectors = set()
+
+    for row in X.toarray():
+        unique_vectors.add(
+            tuple(row)
+        )
+
+    unique_count = len(unique_vectors)
+
+    actual_clusters = min(
+        number_of_clusters,
+        len(posts),
+        unique_count
+    )
+
+    # K-Means needs at least 2 clusters
+    # to actually perform clustering.
+    if actual_clusters < 2:
+
+        return [{
+            "cluster_id": 0,
+            "cluster_name": "Instagram Posts",
+            "post_count": len(posts),
+            "posts": posts
+        }]
+
+    # --------------------------------
+    # K-Means
+    # --------------------------------
 
     model = KMeans(
-        n_clusters=number_of_clusters,
+        n_clusters=actual_clusters,
         random_state=42,
         n_init=10
     )
 
-    labels = model.fit_predict(embeddings)
+    labels = model.fit_predict(X)
 
-    # ------------------------------------------------
-    # Create clusters
-    # ------------------------------------------------
+    # --------------------------------
+    # Build clusters
+    # --------------------------------
 
-    clusters = {}
+    clusters = []
 
-    for index, label in enumerate(labels):
+    for cluster_id in range(actual_clusters):
 
-        if label not in clusters:
-            clusters[label] = []
+        cluster_posts_list = []
 
-        clusters[label].append(
-            posts[index]
-        )
+        for index, label in enumerate(labels):
 
-    # ------------------------------------------------
-    # Format result
-    # ------------------------------------------------
+            if label == cluster_id:
 
-    result = []
+                cluster_posts_list.append(
+                    posts[index]
+                )
 
-    for cluster_id, cluster_posts_list in clusters.items():
+        if not cluster_posts_list:
+            continue
 
-        cluster_name = generate_cluster_name(
-            cluster_posts_list
-        )
-
-        result.append({
-            "cluster_id": int(cluster_id),
-            "cluster_name": cluster_name,
+        clusters.append({
+            "cluster_id": cluster_id,
+            "cluster_name": f"Cluster {cluster_id + 1}",
             "post_count": len(cluster_posts_list),
             "posts": cluster_posts_list
         })
 
-    return result
-
-
-def generate_cluster_name(posts):
-    """
-    Generate a meaningful name for a cluster.
-    """
-
-    text_parts = []
-
-    for post in posts:
-
-        caption = post.get("caption", "")
-
-        hashtags = post.get("hashtags", [])
-
-        if isinstance(hashtags, list):
-            hashtags = " ".join(hashtags)
-
-        text_parts.append(
-            f"{caption} {hashtags}"
-        )
-
-    combined_text = "\n".join(text_parts)
-
-    # Ask OpenAI to name the cluster
-    prompt = f"""
-You are an Instagram content analyst.
-
-Below are several Instagram posts that belong to
-the same semantic cluster.
-
-Posts:
-
-{combined_text}
-
-Give this cluster a short and meaningful topic name.
-
-Examples:
-
-Messi Jersey
-Wildlife Conservation
-Space Exploration
-Travel Destinations
-Football Content
-Fashion Trends
-
-Return ONLY the cluster name.
-Do not explain it.
-Keep it between 2 and 5 words.
-"""
-
-    response = client.responses.create(
-        model="gpt-5.6-luna",
-        input=prompt
-    )
-
-    name = response.output_text.strip()
-
-    return name
+    return clusters

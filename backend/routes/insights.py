@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
 
-from services.instagram_service import get_instagram_posts
+from services.keyword_pipeline import run_keyword_pipeline
 from services.clustering_service import cluster_posts
 from services.insight_service import generate_cluster_insight
 
@@ -8,80 +8,53 @@ from services.insight_service import generate_cluster_insight
 insights_bp = Blueprint("insights", __name__)
 
 
-@insights_bp.route("/generate", methods=["GET"])
-def generate_insights():
+@insights_bp.route("/search", methods=["GET"])
+def search_keyword():
+    """
+    Keyword-based Instagram analytics pipeline.
 
-    username = request.args.get("username")
+    Keyword
+        ↓
+    Instagram search
+        ↓
+    Bright Data post collection
+        ↓
+    Clustering
+        ↓
+    AI insight generation
+    """
 
-    if not username:
+    keyword = request.args.get("keyword")
+
+    if not keyword:
         return jsonify({
             "success": False,
-            "message": "username is required"
+            "message": "keyword is required"
         }), 400
 
     try:
 
-        # -----------------------------------------
-        # 1. Get Instagram posts
-        # -----------------------------------------
+        # --------------------------------
+        # STEP 1: Keyword → Instagram posts
+        # --------------------------------
 
-        result = get_instagram_posts(username)
+        pipeline_result = run_keyword_pipeline(
+            keyword,
+            max_results=5
+        )
 
-        raw_posts = []
-
-        if isinstance(result, dict):
-
-            outer_posts = result.get("posts")
-
-            if isinstance(outer_posts, dict):
-                raw_posts = outer_posts.get("posts", [])
-
-            elif isinstance(outer_posts, list):
-                raw_posts = outer_posts
-
-        elif isinstance(result, list):
-
-            for item in result:
-
-                if isinstance(item, dict):
-
-                    item_posts = item.get("posts", [])
-
-                    if isinstance(item_posts, list):
-                        raw_posts.extend(item_posts)
-
-        # -----------------------------------------
-        # 2. Clean posts
-        # -----------------------------------------
-
-        cleaned_posts = []
-
-        for post in raw_posts:
-
-            if not isinstance(post, dict):
-                continue
-
-            cleaned_posts.append({
-                "id": post.get("id"),
-                "username": username,
-                "caption": post.get("caption", ""),
-                "content_type": post.get("content_type"),
-                "date": post.get("datetime"),
-                "hashtags": post.get("post_hashtags") or [],
-                "image_url": post.get("image_url"),
-                "post_url": post.get("url")
-            })
+        cleaned_posts = pipeline_result["posts"]
 
         if not cleaned_posts:
-
             return jsonify({
                 "success": False,
-                "message": "No Instagram posts found"
+                "message": "No Instagram posts found",
+                "keyword": keyword
             }), 404
 
-        # -----------------------------------------
-        # 3. Create clusters
-        # -----------------------------------------
+        # --------------------------------
+        # STEP 2: Clustering
+        # --------------------------------
 
         number_of_clusters = int(
             request.args.get("clusters", 3)
@@ -92,9 +65,9 @@ def generate_insights():
             number_of_clusters
         )
 
-        # -----------------------------------------
-        # 4. Generate ONE insight per cluster
-        # -----------------------------------------
+        # --------------------------------
+        # STEP 3: AI insight for each cluster
+        # --------------------------------
 
         results = []
 
@@ -112,27 +85,25 @@ def generate_insights():
                 "posts": cluster["posts"]
             })
 
-        # -----------------------------------------
-        # 5. Return final result
-        # -----------------------------------------
+        # --------------------------------
+        # FINAL RESPONSE
+        # --------------------------------
 
         return jsonify({
             "success": True,
-            "username": username,
+            "keyword": keyword,
             "total_posts": len(cleaned_posts),
             "total_clusters": len(results),
             "clusters": results
         })
 
     except ValueError:
-
         return jsonify({
             "success": False,
             "message": "clusters must be a number"
         }), 400
 
     except Exception as e:
-
         return jsonify({
             "success": False,
             "message": str(e)
